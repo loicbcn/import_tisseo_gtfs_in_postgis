@@ -1,8 +1,8 @@
 \set datapath 'D:/donnees/tisseo/20190415/'
 \set schema reseau.
 -- agency.txt
-DROP TABLE IF EXISTS reseau.agency;
-CREATE TABLE reseau.agency (
+DROP TABLE IF EXISTS :schema agency;
+CREATE TABLE :schema agency (
     fid serial PRIMARY KEY,
     agency_id varchar(20),
     agency_name varchar(80),
@@ -13,8 +13,8 @@ CREATE TABLE reseau.agency (
 );
 
 -- calendar.txt
-DROP TABLE IF EXISTS reseau.calendar;
-CREATE TABLE reseau.calendar (
+DROP TABLE IF EXISTS :schema calendar;
+CREATE TABLE :schema calendar (
     fid serial PRIMARY KEY,
     service_id varchar(20),
     monday boolean,
@@ -29,8 +29,8 @@ CREATE TABLE reseau.calendar (
  );
 
 -- calendar_dates.txt
-DROP TABLE IF EXISTS reseau.calendar_dates;
-CREATE TABLE reseau.calendar_dates (
+DROP TABLE IF EXISTS :schema calendar_dates;
+CREATE TABLE :schema calendar_dates (
     fid serial PRIMARY KEY,
     service_id varchar(20),
     "date" date,
@@ -38,8 +38,8 @@ CREATE TABLE reseau.calendar_dates (
 );
 
 -- routes.txt
-DROP TABLE IF EXISTS reseau.routes;
-CREATE TABLE reseau.routes (
+DROP TABLE IF EXISTS :schema routes;
+CREATE TABLE :schema routes (
     fid serial PRIMARY KEY,
     route_id varchar(20),
     agency_id varchar(20),
@@ -53,8 +53,8 @@ CREATE TABLE reseau.routes (
 );
 
 -- shapes.txt
-DROP TABLE IF EXISTS reseau.shapes;
-CREATE TABLE reseau.shapes (
+DROP TABLE IF EXISTS :schema shapes;
+CREATE TABLE :schema shapes (
     fid serial PRIMARY KEY,
     shape_id varchar(20),
     shape_pt_lat real,
@@ -63,8 +63,8 @@ CREATE TABLE reseau.shapes (
 );
 
 -- stop_times.txt
-DROP TABLE IF EXISTS reseau.stop_times;
-CREATE TABLE reseau.stop_times (
+DROP TABLE IF EXISTS :schema stop_times;
+CREATE TABLE :schema stop_times (
     fid serial PRIMARY KEY,
     trip_id varchar(20),
     stop_id varchar(20),
@@ -78,8 +78,8 @@ CREATE TABLE reseau.stop_times (
 );
 
 -- stops.txt
-DROP TABLE IF EXISTS reseau.stops;
-CREATE TABLE reseau.stops (
+DROP TABLE IF EXISTS :schema stops;
+CREATE TABLE :schema stops (
     fid serial PRIMARY KEY,
     stop_id varchar(20),
     stop_code varchar(20),
@@ -92,8 +92,8 @@ CREATE TABLE reseau.stops (
 );
 
 -- trips
-DROP TABLE IF EXISTS reseau.trips;
-CREATE TABLE reseau.trips (
+DROP TABLE IF EXISTS :schema trips;
+CREATE TABLE :schema trips (
     fid serial PRIMARY KEY,
     trip_id varchar(20),
     service_id varchar(20),
@@ -137,23 +137,23 @@ FROM :'path' DELIMITER ',' CSV HEADER ENCODING 'UTF-8';
 
 
 -- Géometrie des stops (points)
-ALTER TABLE reseau.stops ADD COLUMN geom geometry(Point,2154);
-CREATE INDEX idx_reseau_stops ON reseau.stops USING gist (geom);
+ALTER TABLE :schema stops ADD COLUMN geom geometry(Point,2154);
+CREATE INDEX idx_reseau_stops ON :schema stops USING gist (geom);
 
-UPDATE reseau.stops 
+UPDATE :schema stops 
     SET geom = ST_TRANSFORM(ST_SETSRID(ST_MakePoint(cast(stop_lon as float8), cast(stop_lat as float8)),4326), 2154);
     
     
 -- Création d'une table lines contenant chaque route 1 fois (pas de superposition)
-DROP TABLE IF EXISTS reseau.lines;
+DROP TABLE IF EXISTS :schema lines;
 
-CREATE TABLE reseau.lines AS (
+CREATE TABLE :schema lines AS (
     -- Sélection des shapes de chaque route
     with lines as (
         select r.route_short_name, max(r.route_color) route_color, max(r.route_text_color) route_text_color, s.shape_id, count(*) nb
-        from reseau.shapes s
-        inner join reseau.trips t on t.shape_id = s.shape_id 
-        inner join reseau.routes r on r.route_id = t.route_id
+        from :schema shapes s
+        inner join :schema trips t on t.shape_id = s.shape_id 
+        inner join :schema routes r on r.route_id = t.route_id
         -- where r.route_short_name IN( 'T1', 'T2', 'A', 'B')
         group by r.route_short_name, s.shape_id 
         order by r.route_short_name, nb desc
@@ -168,7 +168,7 @@ CREATE TABLE reseau.lines AS (
     -- Met les segments des itinéraires dans leur ordre de passage
     orderedshapes as (
         select i.route_short_name, i.route_color, i.route_text_color, s.shape_id, cast(s.shape_pt_lon as real) lon, cast(s.shape_pt_lat as real) lat, s.shape_pt_sequence
-        from reseau.shapes s
+        from :schema shapes s
         inner join itis i on i.shape_id = s.shape_id
         order by s.shape_id, cast(s.shape_pt_sequence as integer)
     ),
@@ -182,15 +182,15 @@ CREATE TABLE reseau.lines AS (
 );
 
 
-ALTER TABLE reseau.lines ADD COLUMN fid SERIAL PRIMARY KEY;
-CREATE INDEX lines_geom_gist ON reseau.lines USING GIST (geom);
+ALTER TABLE :schema lines ADD COLUMN fid SERIAL PRIMARY KEY;
+CREATE INDEX lines_geom_gist ON :schema lines USING GIST (geom);
 
 -- un peu de nettoyage
-VACUUM ANALYZE reseau.agency;
-VACUUM ANALYZE reseau.calendar;
-VACUUM ANALYZE reseau.calendar_dates;
-VACUUM ANALYZE reseau.routes;
-VACUUM ANALYZE reseau.shapes;
-VACUUM ANALYZE reseau.stop_times;
-VACUUM ANALYZE reseau.stops;
-VACUUM ANALYZE reseau.trips;
+VACUUM ANALYZE :schema agency;
+VACUUM ANALYZE :schema calendar;
+VACUUM ANALYZE :schema calendar_dates;
+VACUUM ANALYZE :schema routes;
+VACUUM ANALYZE :schema shapes;
+VACUUM ANALYZE :schema stop_times;
+VACUUM ANALYZE :schema stops;
+VACUUM ANALYZE :schema trips;
