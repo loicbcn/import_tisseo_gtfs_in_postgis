@@ -1,4 +1,6 @@
+-- Répertoire ou se trouvent les données
 \set datapath 'D:/donnees/tisseo/20190415/'
+-- Nom du schéma de la base dans lequel importer les données
 \set schema reseau.
 -- agency.txt
 DROP TABLE IF EXISTS :schema agency;
