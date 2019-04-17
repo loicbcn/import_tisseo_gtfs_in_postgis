@@ -1,5 +1,6 @@
 -- Répertoire ou se trouvent les données
 \set datapath 'D:/donnees/tisseo/20190415/'
+-- Création des tables
 -- agency.txt
 DROP TABLE IF EXISTS reseau.agency;
 CREATE TABLE reseau.agency (
@@ -102,7 +103,8 @@ CREATE TABLE reseau.trips (
     direction_id smallint, 
     shape_id varchar(20) 
 );
-    
+
+-- Insertion des données
 \set path :datapath 'agency.txt'
 COPY reseau.agency(agency_id,agency_name,agency_url,agency_timezone,agency_phone,agency_lang) 
 FROM :'path' DELIMITER ',' CSV HEADER ENCODING 'UTF-8';
@@ -143,7 +145,7 @@ CREATE INDEX idx_reseau_stops ON reseau.stops USING gist (geom);
 UPDATE reseau.stops 
     SET geom = ST_TRANSFORM(ST_SETSRID(ST_MakePoint(cast(stop_lon as float8), cast(stop_lat as float8)),4326), 2154);
     
-    
+-- Optionnel    
 -- Création d'une table lines contenant chaque route 1 fois (pas de superposition)
 DROP TABLE IF EXISTS reseau.lines;
 
@@ -180,7 +182,6 @@ CREATE TABLE reseau.lines AS (
     select st_makeline(geom)::geometry(LINESTRING,2154) geom, shape_id, MAX(route_short_name) route_short_name, max(route_color) route_color, max(route_text_color) route_text_color
     from points group by shape_id
 );
-
 
 ALTER TABLE reseau.lines ADD COLUMN fid SERIAL PRIMARY KEY;
 CREATE INDEX lines_geom_gist ON reseau.lines USING GIST (geom);
