@@ -1,3 +1,4 @@
+-- Répertoire ou se trouvent les données
 \set datapath 'D:/donnees/tisseo/20190415/'
 -- agency.txt
 DROP TABLE IF EXISTS reseau.agency;
