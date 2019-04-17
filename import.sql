@@ -1,6 +1,5 @@
--- Répertoire ou se trouvent les données
 \set datapath 'D:/donnees/tisseo/20190415/'
--- Création des tables
+\set schema reseau.
 -- agency.txt
 DROP TABLE IF EXISTS reseau.agency;
 CREATE TABLE reseau.agency (
@@ -103,38 +102,37 @@ CREATE TABLE reseau.trips (
     direction_id smallint, 
     shape_id varchar(20) 
 );
-
--- Insertion des données
+    
 \set path :datapath 'agency.txt'
-COPY reseau.agency(agency_id,agency_name,agency_url,agency_timezone,agency_phone,agency_lang) 
+COPY :schema agency(agency_id,agency_name,agency_url,agency_timezone,agency_phone,agency_lang) 
 FROM :'path' DELIMITER ',' CSV HEADER ENCODING 'UTF-8';
 
 \set path :datapath 'calendar.txt'
-COPY reseau.calendar(service_id,monday,tuesday,wednesday,thursday,friday,saturday,sunday,start_date,end_date) 
+COPY :schema calendar(service_id,monday,tuesday,wednesday,thursday,friday,saturday,sunday,start_date,end_date) 
 FROM :'path' DELIMITER ',' CSV HEADER ENCODING 'UTF-8';
 
 \set path :datapath 'calendar_dates.txt'
-COPY reseau.calendar_dates(service_id, "date", exception_type) 
+COPY :schema calendar_dates(service_id, "date", exception_type) 
 FROM :'path' DELIMITER ',' CSV HEADER ENCODING 'UTF-8';
 
 \set path :datapath 'routes.txt'
-COPY reseau.routes(route_id,agency_id,route_short_name,route_long_name,route_desc,route_type,route_url,route_color,route_text_color) 
+COPY :schema routes(route_id,agency_id,route_short_name,route_long_name,route_desc,route_type,route_url,route_color,route_text_color) 
 FROM :'path' DELIMITER ',' CSV HEADER ENCODING 'UTF-8';
 
 \set path :datapath 'shapes.txt'
-COPY reseau.shapes(shape_id,shape_pt_lat,shape_pt_lon,shape_pt_sequence) 
+COPY :schema shapes(shape_id,shape_pt_lat,shape_pt_lon,shape_pt_sequence) 
 FROM :'path' DELIMITER ',' CSV HEADER ENCODING 'UTF-8';
 
 \set path :datapath 'stop_times.txt'
-COPY reseau.stop_times(trip_id,stop_id,stop_sequence,arrival_time,departure_time,stop_headsign,pickup_type,drop_off_type,shape_dist_traveled) 
+COPY :schema stop_times(trip_id,stop_id,stop_sequence,arrival_time,departure_time,stop_headsign,pickup_type,drop_off_type,shape_dist_traveled) 
 FROM :'path' DELIMITER ',' CSV HEADER ENCODING 'UTF-8';
 
 \set path :datapath 'stops.txt'
-COPY reseau.stops(stop_id,stop_code,stop_name,stop_lat,stop_lon,location_type,parent_station,wheelchair_boarding ) 
+COPY :schema stops(stop_id,stop_code,stop_name,stop_lat,stop_lon,location_type,parent_station,wheelchair_boarding ) 
 FROM :'path' DELIMITER ',' CSV HEADER ENCODING 'UTF-8';
 
 \set path :datapath 'trips.txt'
-COPY reseau.trips(trip_id,service_id,route_id,trip_headsign,direction_id,shape_id ) 
+COPY :schema trips(trip_id,service_id,route_id,trip_headsign,direction_id,shape_id ) 
 FROM :'path' DELIMITER ',' CSV HEADER ENCODING 'UTF-8';
 
 
@@ -145,7 +143,7 @@ CREATE INDEX idx_reseau_stops ON reseau.stops USING gist (geom);
 UPDATE reseau.stops 
     SET geom = ST_TRANSFORM(ST_SETSRID(ST_MakePoint(cast(stop_lon as float8), cast(stop_lat as float8)),4326), 2154);
     
--- Optionnel    
+    
 -- Création d'une table lines contenant chaque route 1 fois (pas de superposition)
 DROP TABLE IF EXISTS reseau.lines;
 
@@ -182,6 +180,7 @@ CREATE TABLE reseau.lines AS (
     select st_makeline(geom)::geometry(LINESTRING,2154) geom, shape_id, MAX(route_short_name) route_short_name, max(route_color) route_color, max(route_text_color) route_text_color
     from points group by shape_id
 );
+
 
 ALTER TABLE reseau.lines ADD COLUMN fid SERIAL PRIMARY KEY;
 CREATE INDEX lines_geom_gist ON reseau.lines USING GIST (geom);
