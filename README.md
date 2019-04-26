@@ -1,4 +1,4 @@
-# import_tisseo_gtfs_in_postgis
+# import tisseo gtfs dans une base postgis
 Import des données  gtfs fournies par Tisséo (Transports toulousains) dans une base de données postgis
 
 Il faut au préalable avoir à disposition une base de données postgre/postgis pour pouvoir y importer les données.
